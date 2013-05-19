@@ -6,6 +6,7 @@
 #include "ConvertVcproj.h"
 #include "ConvertVcprojDlg.h"
 #include "ParseVcxproj.h"
+#include "ParseSln.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -107,15 +108,96 @@ void CConvertVcprojDlg::OnClose()
 
 void CConvertVcprojDlg::OnBnClickedButtonConvert()
 {
-	//CFileDialog fileDlg(TRUE, NULL, NULL, OFN_HIDEREADONLY | OFN_OVERWRITEPROMPT,
-	//	_T("vcxproj文件(*.vcxproj)|*.vcxproj|所有文件(*.*)|*.*||"));
-	//if (fileDlg.DoModal() == IDOK)
-	//{
-
-	//}
 	CString strPath;
 	GetDlgItemText(IDC_EDIT_VCXPROJ, strPath);
 	theApp.m_StrVcxprojPath = strPath;
+
+	BOOL bOk = FALSE;
+	strPath = strPath.Trim();
+	int nExt = strPath.ReverseFind('.');
+	if (nExt != -1)
+	{
+		CString strExt = strPath.Mid(nExt);
+		if (strExt.CompareNoCase(_T(".sln")) == 0)
+		{
+			bOk = ConvertSln(strPath);
+		} 
+		else if (strExt.CompareNoCase(_T(".vcxproj")) == 0)
+		{
+			bOk = ConvertVcxproj(strPath);
+		}
+	}
+	if (bOk)
+	{
+		AfxMessageBox(_T("succeed"));
+	}
+	else
+	{
+		AfxMessageBox(_T("fail"));
+	}
+}
+
+BOOL CConvertVcprojDlg::ConvertSln(const CString &strPath)
+{
+	BOOL bOk = FALSE;
+	CString strVcxproj;
+	CString strPathName;
+	int nPos = strPath.ReverseFind('\\');
+	if (nPos != -1)
+	{
+		strPathName = strPath.Left(nPos + 1);
+	}
+
+	CParseSln parse;
+	CFile file;
+	if (file.Open(strPath, CFile::modeRead))
+	{
+		unsigned int uSize = (unsigned int)file.GetLength();
+		char *pBuffer = new char[uSize + 2];
+		ZeroMemory(pBuffer, uSize + 2);
+#if _MSC_VER >= 1300
+		file.Read ((void*)pBuffer, uSize);
+#else
+		file.ReadHuge ((void*)pBuffer, uSize);
+#endif
+		if (parse.Parse(pBuffer))
+		{
+			for (int i = 0; i < parse.GetVcxprojCount(); ++i)
+			{
+				bOk = TRUE;
+				strVcxproj = strPathName; 
+				strVcxproj += parse.GetVcxprojByIndex(i);
+				if (!ConvertVcxproj(strVcxproj))
+				{
+					bOk = FALSE;
+					break;
+				}
+			}			
+		}
+		delete[] pBuffer;
+		file.Close();
+	}
+	if (bOk)
+	{
+		std::string strOut;
+		parse.Save(strOut);
+		CString strNewPath = strPath;
+		strNewPath.Insert(strPath.ReverseFind('.'), _T("vc2008"));
+		if (file.Open(strNewPath, CFile::modeCreate | CFile::modeWrite))
+		{
+			file.Write(strOut.c_str(), strOut.length());
+			file.Close();
+		}
+		else
+		{
+			return FALSE;
+		}
+	}
+	return bOk;
+}
+
+BOOL CConvertVcprojDlg::ConvertVcxproj(const CString &strPath)
+{
 	CParseVcxproj parse;
 	CFile file;
 	if (file.Open(strPath, CFile::modeRead))
@@ -132,8 +214,13 @@ void CConvertVcprojDlg::OnBnClickedButtonConvert()
 		delete[] pBuffer;
 		file.Close();
 	}
-	strPath.Append(_T(".filters"));
-	if (file.Open(strPath, CFile::modeRead))
+	else
+	{
+		return FALSE;
+	}
+	CString strNewPath = strPath;
+	strNewPath.Append(_T(".filters"));
+	if (file.Open(strNewPath, CFile::modeRead))
 	{
 		unsigned int uSize = (unsigned int)file.GetLength();
 		char *pBuffer = new char[uSize + 2];
@@ -147,4 +234,24 @@ void CConvertVcprojDlg::OnBnClickedButtonConvert()
 		delete[] pBuffer;
 		file.Close();
 	}
+	else
+	{
+		return FALSE;
+	}
+	std::string strOut;
+	parse.Save(strOut);
+	strNewPath = strPath;
+	int nExt = strPath.ReverseFind('.');
+	strNewPath.Delete(nExt, strNewPath.GetLength());
+	strNewPath.Append(_T(".vcproj"));
+	if (file.Open(strNewPath, CFile::modeCreate | CFile::modeWrite))
+	{
+		file.Write(strOut.c_str(), strOut.length());
+		file.Close();
+	}
+	else
+	{
+		return FALSE;
+	}
+	return TRUE;
 }

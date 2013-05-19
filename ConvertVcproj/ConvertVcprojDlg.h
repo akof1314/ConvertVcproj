@@ -23,14 +23,16 @@ public:
 protected:
 	HICON m_hIcon;
 
+	BOOL ConvertSln(const CString &strPath);
+	BOOL ConvertVcxproj(const CString &strPath);
+
 	// 生成的消息映射函数
 	virtual BOOL OnInitDialog();
+	virtual void OnOK();
+	virtual void OnCancel();
 	afx_msg void OnPaint();
 	afx_msg HCURSOR OnQueryDragIcon();
 	DECLARE_MESSAGE_MAP()
-	virtual void OnOK();
-	virtual void OnCancel();
-public:
 	afx_msg void OnClose();
 	afx_msg void OnBnClickedButtonConvert();
 };

@@ -194,6 +194,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\ParseSln.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\ParseVcxproj.cpp"
 				>
 			</File>
@@ -229,6 +233,10 @@
 			</File>
 			<File
 				RelativePath=".\ConvertVcprojDlg.h"
+				>
+			</File>
+			<File
+				RelativePath=".\ParseSln.h"
 				>
 			</File>
 			<File
