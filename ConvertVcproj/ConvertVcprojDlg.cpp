@@ -183,7 +183,7 @@ BOOL CConvertVcprojDlg::ConvertSln(const CString &strPath)
 		parse.Save(strOut);
 		CString strNewPath = strPath;
 		strNewPath.Insert(strPath.ReverseFind('.'), _T("vc2008"));
-		if (file.Open(strNewPath, CFile::modeCreate | CFile::modeWrite))
+        if (file.Open(strNewPath, CFile::modeCreate | CFile::modeWrite | CFile::typeBinary))
 		{
 			file.Write(strOut.c_str(), strOut.length());
 			file.Close();
@@ -244,7 +244,7 @@ BOOL CConvertVcprojDlg::ConvertVcxproj(const CString &strPath)
 	int nExt = strPath.ReverseFind('.');
 	strNewPath.Delete(nExt, strNewPath.GetLength());
 	strNewPath.Append(_T(".vcproj"));
-	if (file.Open(strNewPath, CFile::modeCreate | CFile::modeWrite))
+	if (file.Open(strNewPath, CFile::modeCreate | CFile::modeWrite | CFile::typeBinary))
 	{
 		file.Write(strOut.c_str(), strOut.length());
 		file.Close();
